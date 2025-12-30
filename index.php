@@ -1,8 +1,6 @@
 <?php
 session_start();
-
 $conn = new mysqli("localhost", "root", "", "xss_demo");
-
 
 if (isset($_POST['login'])) {
     $user = $_POST['username'];
@@ -13,10 +11,11 @@ if (isset($_POST['login'])) {
     }
 }
 
-
 if (isset($_POST['submit_comment']) && isset($_SESSION['user'])) {
     $comment = $_POST['comment'];
-    $conn->query("INSERT INTO comments (user_comment) VALUES ('$comment')");
+    $stmt = $conn->prepare("INSERT INTO comments (user_comment) VALUES (?)");
+    $stmt->bind_param("s", $comment);
+    $stmt->execute();
 }
 
 $all_comments = $conn->query("SELECT * FROM comments ORDER BY id DESC");
@@ -26,20 +25,18 @@ $all_comments = $conn->query("SELECT * FROM comments ORDER BY id DESC");
 <html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <title>XSS Vulnerable Project</title>
+    <title>XSS Secure Project</title>
     <style>
-        body { font-family: sans-serif; background: #fff5f5; padding: 40px; }
-        .container { background: white; padding: 25px; border-radius: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); max-width: 500px; margin: auto; border: 2px solid red; }
+        body { font-family: sans-serif; background: #f4f7f6; padding: 40px; }
+        .container { background: white; padding: 25px; border-radius: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); max-width: 500px; margin: auto; }
         input, textarea { width: 100%; padding: 10px; margin: 10px 0; border: 1px solid #ddd; border-radius: 5px; box-sizing: border-box; }
-        button { width: 100%; padding: 10px; background: #d93025; color: white; border: none; border-radius: 5px; cursor: pointer; }
-        .comment-item { background: #fee; padding: 10px; margin-top: 10px; border-radius: 5px; border-right: 5px solid red; }
+        button { width: 100%; padding: 10px; background: #28a745; color: white; border: none; border-radius: 5px; cursor: pointer; }
+        .comment-item { background: #eee; padding: 10px; margin-top: 10px; border-radius: 5px; border-right: 5px solid #28a745; word-wrap: break-word; }
     </style>
 </head>
 <body>
 
 <div class="container">
-    <h1 style="color: red; text-align: center;">XSS Test</h1>
-
     <?php if (!isset($_SESSION['user'])): ?>
         <h2>تسجيل الدخول</h2>
         <form method="POST">
@@ -48,19 +45,19 @@ $all_comments = $conn->query("SELECT * FROM comments ORDER BY id DESC");
             <button name="login">دخول</button>
         </form>
     <?php else: ?>
-        <h2>أهلاً، <?php echo $_SESSION['user']; ?></h2>
+        <h2>أهلاً، <?php echo htmlspecialchars($_SESSION['user'], ENT_QUOTES, 'UTF-8'); ?></h2>
         
         <form method="POST">
-            <textarea name="comment" placeholder="اكتب تعليقك..." required></textarea>
-            <button name="submit_comment">نشر التعليق</button>
+            <textarea name="comment" placeholder="اكتب تعليقك هنا..." required></textarea>
+            <button name="submit_comment">نشر التعليق الآمن</button>
         </form>
         <p><a href="logout.php">تسجيل الخروج</a></p>
 
         <hr>
-        <h3>التعليقات المنشورة:</h3>
+        <h3>التعليقات (المحمية):</h3>
         <?php while($row = $all_comments->fetch_assoc()): ?>
             <div class="comment-item">
-                <?php echo $row['user_comment']; ?>
+                <?php echo htmlspecialchars($row['user_comment'], ENT_QUOTES, 'UTF-8'); ?>
             </div>
         <?php endwhile; ?>
     <?php endif; ?>
